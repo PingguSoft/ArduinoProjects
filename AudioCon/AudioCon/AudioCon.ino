@@ -2,6 +2,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <IRremote.h>
+#include <EEPROM.h>
 #include "utils.h"
 #include "PT2258.h"
 
@@ -10,10 +11,12 @@
 #define PIN_AUX_B0      4
 #define PIN_AUX_B1      5
 #define PIN_AUX_B2      6
+#define PIN_PWR         7
 
 #define REM_VOL_UP      0xFFA857
 #define REM_VOL_DOWN    0xFFE01F
 #define REM_VOL_MUTE    0xFF906F
+#define REM_CH          0xFF629D
 #define REM_CH_UP       0xFFE21D
 #define REM_CH_DOWN     0xFFA25D
 #define REM_0           0xFF6897
@@ -27,14 +30,27 @@
 #define REM_8           0xFF4AB5
 #define REM_9           0xFF52AD
 
+struct conf {
+    u32 dwSignature;
+    u8  ucAux;
+    u8  ucCh;
+    u8  ucVol[3];
+};
+
+struct pconf {
+    u8  ucAux;
+    u8  ucCh;
+};
+
 static Adafruit_SSD1306 mDisp(-1);
 static PT2258           mVolCtrl;
 static IRrecv           mIR(PIN_IR, PIN_LED);
-static u8               mVol = 0;
-static u8               mCh  = 0;
-static u8               mAux  = 0;
 static u32              mLastKey = 0;
 static u8               mMute = 0;
+static u8               mPwr  = 1;
+static struct conf      mConf;
+static struct pconf     mPrevConf;
+static u32              mLastUpdate;
 
 static const u8 PROGMEM ICON_MIX[] =
 {
@@ -120,7 +136,7 @@ void initLCD(void)
 {
     // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
     mDisp.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
-    drawScreen(mCh, mVol, mAux);
+    drawScreen(mConf.ucCh, mConf.ucVol[mConf.ucCh], mConf.ucAux);
 }
 
 void drawScreen(u8 ch, u8 vol, u8 aux)
@@ -160,30 +176,70 @@ void outAux(u8 aux)
     digitalWrite(PIN_AUX_B2, (aux & 0x04));
 }
 
+#define MAX_ATT     50
+
+void setVolume(u8 ch, u8 vol)
+{
+    u8 reg = (vol == 0) ? 79 : (MAX_ATT - map(vol, 0, 20, 0, MAX_ATT));
+
+    mVolCtrl.setChannelVolume(ch * 2, reg);
+    mVolCtrl.setChannelVolume(ch * 2 + 1, reg);
+    LOG(F("vol:%d, reg:%d\n"), vol, reg);
+}
+
 void setup()
 {
-    Wire.begin();
     Serial.begin(115200);
     while (!Serial);             // Leonardo: wait for serial monitor
+    Wire.begin();
+    LOG(F("Start !!\n"));
 
     pinMode(PIN_AUX_B0, OUTPUT);
     pinMode(PIN_AUX_B1, OUTPUT);
     pinMode(PIN_AUX_B2, OUTPUT);
-    outAux(mAux);
+    pinMode(PIN_PWR,    OUTPUT);
+    outAux(mConf.ucAux);
 
-    LOG(F("Start !!\n"));
-    mIR.enableIRIn();
+    EEPROM.get(0, mConf);
+    if (mConf.dwSignature != 0xcafebabe) {
+        mConf.dwSignature = 0xcafebabe;
+        mConf.ucAux = 0;
+        mConf.ucCh  = 0;
+        mConf.ucVol[0] = 10;
+        mConf.ucVol[1] = 10;
+        mConf.ucVol[2] = 10;
+        EEPROM.put(0, mConf);
+    }
+    mConf.ucCh  = 0;
+    mPrevConf.ucAux = mConf.ucAux;
+    mPrevConf.ucCh  = mConf.ucCh;
+
     mVolCtrl.init(0x40);
+    for (u8 i = 0; i < 3; i++) {
+        setVolume(i, mConf.ucVol[i]);
+    }
+
+    mIR.enableIRIn();
     initLCD();
 }
 
 void loop()
 {
     decode_results  results;        // Somewhere to store the results
+    u32             dwTS;
+    bool            bUpdate = FALSE;
+
+    dwTS = millis();
 
     if (mIR.decode(&results)) {     // Grab an IR code
         Serial.println(results.decode_type, DEC);
         Serial.println(results.value, HEX);
+
+        if (results.decode_type != 3) {
+            mIR.resume();
+            mLastKey = 0;
+            return;
+        }
 
         if (results.value == 0xFFFFFFFF) {
             if (mLastKey == REM_VOL_UP || mLastKey == REM_VOL_DOWN)
@@ -194,69 +250,97 @@ void loop()
 
         switch (results.value) {
             case REM_VOL_UP:
-                if (mVol < 20)
-                    mVol++;
+                if (mConf.ucVol[mConf.ucCh] < 20)
+                    mConf.ucVol[mConf.ucCh]++;
                 break;
 
             case REM_VOL_DOWN:
-                if (mVol > 0)
-                    mVol--;
+                if (mConf.ucVol[mConf.ucCh] > 0)
+                    mConf.ucVol[mConf.ucCh]--;
+                break;
+
+            case REM_CH:
+                mPwr = !mPwr;
+                digitalWrite(PIN_PWR, mPwr);
+                LOG(F("pwr:%d\n"), mPwr);
                 break;
 
             case REM_CH_UP:
-                mCh = (mCh + 1) % 3;
+                mConf.ucCh = (mConf.ucCh + 1) % 3;
                 break;
 
             case REM_CH_DOWN:
-                if (mCh > 0)
-                    mCh = (mCh - 1) % 3;
+                if (mConf.ucCh > 0)
+                    mConf.ucCh = (mConf.ucCh - 1) % 3;
                 else
-                    mCh = 2;
+                    mConf.ucCh = 2;
                 break;
 
             case REM_1:
-                mAux = 0;
+                mConf.ucAux = 0;
                 break;
             case REM_2:
-                mAux = 1;
+                mConf.ucAux = 1;
                 break;
             case REM_3:
-                mAux = 2;
+                mConf.ucAux = 2;
                 break;
             case REM_4:
-                mAux = 3;
+                mConf.ucAux = 3;
                 break;
             case REM_5:
-                mAux = 4;
+                mConf.ucAux = 4;
                 break;
             case REM_6:
-                mAux = 5;
+                mConf.ucAux = 5;
                 break;
             case REM_7:
-                mAux = 6;
+                mConf.ucAux = 6;
                 break;
             case REM_8:
-                mAux = 7;
+                mConf.ucAux = 7;
                 break;
             case REM_VOL_MUTE:
                 mMute = !mMute;
-                if (mMute) {
-                    mVolCtrl.setMute(1);
-                } else {
-                    mVolCtrl.setMute(0);
-                }
+                mVolCtrl.setMute(mMute);
+                LOG(F("mute:%d\n"), mMute);
                 break;
         }
 
-        if (mMute) {
-            drawScreen(mCh, 0xff, mAux);
+        if (mPwr) {
+            if (mMute) {
+                drawScreen(mConf.ucCh, 0xff, mConf.ucAux);
+            } else {
+                setVolume(mConf.ucCh, mConf.ucVol[mConf.ucCh]);
+                drawScreen(mConf.ucCh, mConf.ucVol[mConf.ucCh], mConf.ucAux);
+            }
+            outAux(mConf.ucAux);
+
+            if ((mConf.ucAux != mPrevConf.ucAux) || (mConf.ucCh != mPrevConf.ucCh)) {
+                mPrevConf.ucAux = mConf.ucAux;
+                mPrevConf.ucCh  = mConf.ucCh;
+                bUpdate = TRUE;
+            } else if (mLastUpdate - dwTS > 10000) {
+                mLastUpdate = dwTS;
+                bUpdate = TRUE;
+            }
+
+            if (bUpdate) {
+                u8 ch = mConf.ucCh;
+
+                // do not update channel info
+                mConf.ucCh = 0;
+                EEPROM.put(0, mConf);
+                mConf.ucCh = ch;
+
+                mLastUpdate = dwTS;
+            }
         } else {
-            u8 vol = 79 - map(mVol, 0, 20, 0, 79);
-            mVolCtrl.setChannelVolume(mCh, vol);
-            drawScreen(mCh, mVol, mAux);
+            mDisp.clearDisplay();
+            mDisp.display();
         }
-        outAux(mAux);
-        mIR.resume();               // Prepare for the next value
+
+        mIR.resume();
     }
 }
 

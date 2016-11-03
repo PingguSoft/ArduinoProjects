@@ -2,7 +2,7 @@
  *
  * This file is part of the Arduino PT2258 Library
  *
- */ 
+ */
 
 #ifndef __PT2258_H__
 #define __PT2258_H__
@@ -25,21 +25,21 @@
 #define  CHANNEL6_VOLUME_STEP_10  0xa0
 #define  MASTER_VOLUME_1STEP     0xe0
 #define  MASTER_VOLUME_10STEP    0xd0
-#define  MUTE                    0x08
-#define  SYSTEM_RESET            0xc0 
+#define  MUTE                    0xf8
+#define  SYSTEM_RESET            0xc0
 
 class PT2258 {
-    
+
 private:
-    u8  HEX2BCD (unsigned char x);
-    s8  writeI2CChar(unsigned char c);
+    u8  HEX2BCD (u8 x);
+    s8  writeI2CChar(u8 c);
     u8  mAddr;
-    
+
 public:
-    s8   init(u8 addr); 
+    s8   init(u8 addr);
     void setMute(char);
-    void setChannelVolume(unsigned char chvol, char chno);
-    void setMasterVolume(unsigned char mvol);
+    void setChannelVolume(u8 chno, u8 chvol);
+    void setMasterVolume(u8 mvol);
 };
 
 #endif
