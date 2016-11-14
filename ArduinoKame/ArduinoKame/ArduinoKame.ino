@@ -99,6 +99,30 @@ s8 mspCallback(u8 cmd, u8 *data, u8 size, u8 *res)
     return ret;
 }
 
+
+
+#define VBAT_SMOOTH_LEVEL       16
+u16         mVoltBuf[VBAT_SMOOTH_LEVEL];
+u16         mVoltSum;
+u8          mVoltIdx;
+
+u8 getBattVolt(void)
+{
+    u16 v;
+    u16 maxVolt;
+
+    v = analogRead(PIN_ANALOG_VOLT);
+
+    mVoltSum += v;
+    mVoltSum -= mVoltBuf[mVoltIdx];
+    mVoltBuf[mVoltIdx++] = v;
+    mVoltIdx %= VBAT_SMOOTH_LEVEL;
+
+    // max volt = ((r1 + r2) / r2) * 5V
+    maxVolt = (BATT_DIVIDER_R1 / BATT_DIVIDER_R2) * 50 + 50;
+    return map(mVoltSum / VBAT_SMOOTH_LEVEL, 0, 1023, 0, maxVolt - 6);
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -107,7 +131,19 @@ void setup()
     mSerial.begin(SERIAL_BPS);
     mESP.begin(&mSerial);
     mSerial.registerCallback(mspCallback);
+
+    pinMode(PIN_LASER, OUTPUT);
+    analogWrite(PIN_LASER, 0);
+
+    pinMode(PIN_MISSILE, OUTPUT);
+    digitalWrite(PIN_MISSILE, LOW);
+
+    for (u8 i = 0; i < VBAT_SMOOTH_LEVEL; i++) {
+        getBattVolt();
+    }
 }
+
+u8 mLaserPWM = 0;
 
 void loop()
 {
@@ -118,9 +154,10 @@ void loop()
     mCurTS = millis();
 
     // every 5sec
-    if (mCurTS - mLastBattTS > 5000) {
-//        mLastBatt = mRobotAux.getBattVolt();
+    if (mCurTS - mLastBattTS > 300) {
+        mLastBatt = getBattVolt();
         LOG(F("VOLT:%4d\n"), mLastBatt);
+
         mLastBattTS = mCurTS;
     }
 

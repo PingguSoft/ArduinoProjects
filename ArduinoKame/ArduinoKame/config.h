@@ -117,6 +117,11 @@
 #define PIN_RR_TIBIA     8
 #endif
 
+#define PIN_LASER        5
+#define PIN_MISSILE      4
+#define PIN_MISSILE_DET  3
+
+
 //---------------------------------------------------------------------------------------
 // ANALOG
 #define PIN_ANALOG_VOLT         0       // A0
