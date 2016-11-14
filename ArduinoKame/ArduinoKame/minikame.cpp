@@ -1,40 +1,17 @@
 #include "minikame.h"
 #include "utils.h"
 
-/*
-#  Servos: Pro Micro
-#   _________   ________   _________
-#  |(14)______)(15)    (6)(______(7)|
-#  |__|       |   KAME   |       |__|
-#             |          |
-#             |          |
-#             |          |
-#   _________ |          | _________
-#  |(16)_____)(10)_____(9)(______(8)|
-#  |__|                          |__|
-#                  /\
-#                  |
-#             USBs |
-*/
-
-//    board_pins[0] = D1; // front left inner
-//    board_pins[1] = D4, // front right inner
-//    board_pins[2] = D8; // front left outer
-//    board_pins[3] = D6; // front right outer
-//    board_pins[4] = D7; // back left inner
-//    board_pins[5] = D5; // back right inner
-//    board_pins[6] = D2; // back left outer
-//    board_pins[7] = D3; // back right outer
 
 #define SERVO_CNT	8
 
 int angToUsec(float value)
 {
-    return value/180 * (MAX_PULSE_WIDTH-MIN_PULSE_WIDTH) + MIN_PULSE_WIDTH;
+    return (value / 180) * (MAX_PULSE_WIDTH - MIN_PULSE_WIDTH) + MIN_PULSE_WIDTH;
 }
 
 static const u8 TBL_PINS[] PROGMEM = {
-    15, 6, 14, 7, 10, 9, 16, 8
+    PIN_FL_COXA, PIN_FR_COXA, PIN_FL_TIBIA, PIN_FR_TIBIA,
+    PIN_RL_COXA, PIN_RR_COXA, PIN_RL_TIBIA, PIN_RR_TIBIA
 };
 
 void MiniKame::init()

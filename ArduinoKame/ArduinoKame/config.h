@@ -72,11 +72,56 @@
 *****************************************************************************************
 */
 
+/*
+#  Servos: Pro Micro
+#   _________   ________   _________
+#  |(14)______)(15)    (6)(______(7)|
+#  |__|       |   KAME   |       |__|
+#             |          |
+#             |          |
+#             |          |
+#   _________ |          | _________
+#  |(16)_____)(10)_____(9)(______(8)|
+#  |__|                          |__|
+#                  /\
+#                  |
+#             USBs |
+*/
+
+//    board_pins[0] = D1; // front left inner
+//    board_pins[1] = D4, // front right inner
+//    board_pins[2] = D8; // front left outer
+//    board_pins[3] = D6; // front right outer
+//    board_pins[4] = D7; // back left inner
+//    board_pins[5] = D5; // back right inner
+//    board_pins[6] = D2; // back left outer
+//    board_pins[7] = D3; // back right outer
+
+#if defined(__AVR_ATmega328P__)
+#define PIN_FL_COXA     13
+#define PIN_FR_COXA      6
+#define PIN_FL_TIBIA    12
+#define PIN_FR_TIBIA     7
+#define PIN_RL_COXA     10
+#define PIN_RR_COXA      9
+#define PIN_RL_TIBIA    11
+#define PIN_RR_TIBIA     8
+#elif defined(__AVR_ATmega32U4__)
+#define PIN_FL_COXA     15
+#define PIN_FR_COXA      6
+#define PIN_FL_TIBIA    14
+#define PIN_FR_TIBIA     7
+#define PIN_RL_COXA     10
+#define PIN_RR_COXA      9
+#define PIN_RL_TIBIA    16
+#define PIN_RR_TIBIA     8
+#endif
+
 //---------------------------------------------------------------------------------------
 // ANALOG
 #define PIN_ANALOG_VOLT         0       // A0
-#define BATT_DIVIDER_R1         40      // 40K Ohm
-#define BATT_DIVIDER_R2         20      // 20K Ohm
+#define BATT_DIVIDER_R1         10      // 10K Ohm
+#define BATT_DIVIDER_R2         10      // 10K Ohm
 
 // wifi module - default firmware (1), tcp2serial firmware (0)
 #define __FEATURE_WIFI_DEFAULT__    1
