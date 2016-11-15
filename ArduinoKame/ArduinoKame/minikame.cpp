@@ -64,6 +64,7 @@ void MiniKame::trimming(void)
     LOG(F("TRIMMING !!!\n"));
     for (u8 i = 0; i < SERVO_CNT; i++) {
         LOG(F("servo:%d, trim:%d\n"), i + 1, trim[i]);
+        servo[i].write(90 + trim[i]);
     }
 
     while (1) {

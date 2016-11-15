@@ -220,7 +220,7 @@ void loop()
                 mLastAuxBtn = (mLastAuxBtn & ~(BV(BIT_LASER))) | tmp;
                 if (tmp) {
                     analogWrite(PIN_LASER, 255);
-                    tone(PIN_SPEAKER, 392, 300);
+                    tone(PIN_SPEAKER, NOTE_C6, 500);
                 } else {
                     analogWrite(PIN_LASER, 0);
                     noTone(PIN_SPEAKER);
