@@ -117,6 +117,7 @@
 #define PIN_RR_TIBIA     8
 #endif
 
+#define PIN_SPEAKER      A1
 #define PIN_LASER        5
 #define PIN_MISSILE      4
 #define PIN_MISSILE_DET  3

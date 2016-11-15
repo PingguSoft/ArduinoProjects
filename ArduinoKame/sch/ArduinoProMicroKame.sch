@@ -6041,6 +6041,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <part name="SUPPLY2" library="supply2" deviceset="VCC" device=""/>
 <part name="GND3" library="supply1" deviceset="GND" device=""/>
 <part name="MISSILE_MOTOR_" library="testpad" deviceset="TP2" device="P2-38-20"/>
+<part name="GND4" library="supply1" deviceset="GND" device=""/>
+<part name="MISSILE_DET_" library="testpad" deviceset="TP2" device="P2-38-20"/>
 </parts>
 <sheets>
 <sheet>
@@ -6057,7 +6059,7 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <instance part="FR_COXA" gate="G$1" x="78.74" y="22.86" rot="MR0"/>
 <instance part="RR_TIBIA" gate="G$1" x="104.14" y="7.62" rot="MR0"/>
 <instance part="RR_COXA" gate="G$1" x="78.74" y="7.62" rot="MR0"/>
-<instance part="BEC_6V_OUT" gate="A" x="134.62" y="71.12" rot="R180"/>
+<instance part="BEC_6V_OUT" gate="A" x="101.6" y="88.9" rot="R180"/>
 <instance part="R1" gate="G$1" x="106.68" y="63.5" rot="MR270"/>
 <instance part="R2" gate="G$1" x="106.68" y="50.8" rot="R270"/>
 <instance part="GND1" gate="1" x="106.68" y="40.64" rot="MR0"/>
@@ -6081,6 +6083,15 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <instance part="MISSILE_MOTOR_" gate="B" x="160.02" y="20.32" smashed="yes" rot="R270">
 <attribute name="NAME" x="161.29" y="19.05" size="1.778" layer="95"/>
 <attribute name="TP_SIGNAL_NAME" x="158.75" y="19.05" size="1.778" layer="97" rot="R270"/>
+</instance>
+<instance part="GND4" gate="1" x="157.48" y="43.18"/>
+<instance part="MISSILE_DET_" gate="A" x="160.02" y="66.04" smashed="yes" rot="R270">
+<attribute name="NAME" x="161.29" y="64.77" size="1.778" layer="95"/>
+<attribute name="TP_SIGNAL_NAME" x="158.75" y="64.77" size="1.778" layer="97" rot="R270"/>
+</instance>
+<instance part="MISSILE_DET_" gate="B" x="160.02" y="58.42" smashed="yes" rot="R270">
+<attribute name="NAME" x="161.29" y="57.15" size="1.778" layer="95"/>
+<attribute name="TP_SIGNAL_NAME" x="158.75" y="57.15" size="1.778" layer="97" rot="R270"/>
 </instance>
 </instances>
 <busses>
@@ -6144,13 +6155,13 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 </segment>
 <segment>
 <pinref part="BEC_6V_OUT" gate="A" pin="2"/>
-<wire x1="132.08" y1="68.58" x2="119.38" y2="68.58" width="0.1524" layer="91"/>
-<label x="121.92" y="68.58" size="1.778" layer="95"/>
+<wire x1="99.06" y1="86.36" x2="86.36" y2="86.36" width="0.1524" layer="91"/>
+<label x="88.9" y="86.36" size="1.778" layer="95"/>
 </segment>
 <segment>
 <pinref part="BEC_6V_OUT" gate="A" pin="1"/>
-<wire x1="139.7" y1="68.58" x2="154.94" y2="68.58" width="0.1524" layer="91"/>
-<label x="144.78" y="68.58" size="1.778" layer="95"/>
+<wire x1="106.68" y1="86.36" x2="121.92" y2="86.36" width="0.1524" layer="91"/>
+<label x="111.76" y="86.36" size="1.778" layer="95"/>
 </segment>
 <segment>
 <pinref part="R2" gate="G$1" pin="2"/>
@@ -6166,6 +6177,13 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <pinref part="GND3" gate="1" pin="GND"/>
 <pinref part="T2" gate="G$1" pin="E"/>
 <wire x1="157.48" y1="7.62" x2="157.48" y2="10.16" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="GND4" gate="1" pin="GND"/>
+<wire x1="160.02" y1="58.42" x2="157.48" y2="58.42" width="0.1524" layer="91"/>
+<wire x1="157.48" y1="58.42" x2="157.48" y2="45.72" width="0.1524" layer="91"/>
+<pinref part="MISSILE_DET_" gate="B" pin="TP"/>
+<junction x="157.48" y="58.42"/>
 </segment>
 </net>
 <net name="RESET" class="0">
@@ -6282,8 +6300,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 </segment>
 <segment>
 <pinref part="BEC_6V_OUT" gate="A" pin="4"/>
-<wire x1="132.08" y1="71.12" x2="119.38" y2="71.12" width="0.1524" layer="91"/>
-<label x="121.92" y="71.12" size="1.778" layer="95"/>
+<wire x1="99.06" y1="88.9" x2="86.36" y2="88.9" width="0.1524" layer="91"/>
+<label x="88.9" y="88.9" size="1.778" layer="95"/>
 </segment>
 <segment>
 <pinref part="R1" gate="G$1" pin="1"/>
@@ -6364,6 +6382,13 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <label x="38.1" y="58.42" size="1.778" layer="95"/>
 <pinref part="ARDUINO_PRO_MICRO" gate="G$1" pin="7"/>
 </segment>
+<segment>
+<wire x1="160.02" y1="66.04" x2="157.48" y2="66.04" width="0.1524" layer="91"/>
+<label x="147.32" y="66.04" size="1.778" layer="95"/>
+<pinref part="MISSILE_DET_" gate="A" pin="TP"/>
+<wire x1="157.48" y1="66.04" x2="147.32" y2="66.04" width="0.1524" layer="91"/>
+<junction x="157.48" y="66.04"/>
+</segment>
 </net>
 <net name="D4" class="0">
 <segment>
@@ -6435,8 +6460,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <net name="LIPO_2S_PLUS" class="0">
 <segment>
 <pinref part="BEC_6V_OUT" gate="A" pin="3"/>
-<wire x1="139.7" y1="71.12" x2="154.94" y2="71.12" width="0.1524" layer="91"/>
-<label x="144.78" y="71.12" size="1.778" layer="95"/>
+<wire x1="106.68" y1="88.9" x2="121.92" y2="88.9" width="0.1524" layer="91"/>
+<label x="111.76" y="88.9" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="N$1" class="0">

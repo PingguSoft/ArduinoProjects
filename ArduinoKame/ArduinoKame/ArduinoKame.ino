@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include <EEPROM.h>
+#include "pitches.h"
 #include "utils.h"
 #include "minikame.h"
 #include "esp8266.h"
@@ -17,6 +18,10 @@ static u16              mErrCtr = 0;
 static u8               mLastBatt;
 static bool             mIsShutdown = false;
 static u8               mLastAuxBtn = 0;
+
+
+#define BIT_LASER       0
+
 
 /*
 *****************************************************************************************
@@ -126,14 +131,9 @@ u8 getBattVolt(void)
 void setup()
 {
     Serial.begin(115200);
-    mRobot.init();
 
-    mSerial.begin(SERIAL_BPS);
-    mESP.begin(&mSerial);
-    mSerial.registerCallback(mspCallback);
-
+    pinMode(PIN_SPEAKER, OUTPUT);
     pinMode(PIN_LASER, OUTPUT);
-    analogWrite(PIN_LASER, 0);
 
     pinMode(PIN_MISSILE, OUTPUT);
     digitalWrite(PIN_MISSILE, LOW);
@@ -141,13 +141,19 @@ void setup()
     for (u8 i = 0; i < VBAT_SMOOTH_LEVEL; i++) {
         getBattVolt();
     }
+
+    mRobot.init();
+
+    mSerial.begin(SERIAL_BPS);
+    mESP.begin(&mSerial);
+    mSerial.registerCallback(mspCallback);
 }
 
-u8 mLaserPWM = 0;
 
 void loop()
 {
     u8  ch;
+    u8  tmp;
 
     mSerial.handleMSP();
 
@@ -164,6 +170,8 @@ void loop()
 
     if (Serial.available()) {
         ch = Serial.read();
+
+        tmp = mLastAuxBtn;
 
         switch(ch) {
             case 'w':
@@ -204,6 +212,19 @@ void loop()
 
             case '7':
                 mRobot.home();
+                break;
+
+            case 'l':
+                tmp = (tmp & BV(BIT_LASER)) ^ (BV(BIT_LASER));
+                LOG(F("LASER:%4d\n"), tmp);
+                mLastAuxBtn = (mLastAuxBtn & ~(BV(BIT_LASER))) | tmp;
+                if (tmp) {
+                    analogWrite(PIN_LASER, 255);
+                    tone(PIN_SPEAKER, 392, 300);
+                } else {
+                    analogWrite(PIN_LASER, 0);
+                    noTone(PIN_SPEAKER);
+                }
                 break;
 
             case 't':
