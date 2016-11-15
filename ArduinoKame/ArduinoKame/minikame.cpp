@@ -110,6 +110,21 @@ void MiniKame::trimming(void)
     }
 }
 
+void MiniKame::test(int idx, int amp, int off, int pha, float T)
+{
+    float   period[]    = {T, T, T, T, T, T, T, T};
+    int     amplitude[] = {0, 0, 0, 0, 0, 0, 0, 0};
+    int     offset[]    = {0, 0, 0, 0, 0, 0, 0, 0};
+    int     phase[]     = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    amplitude[idx] = amp;
+    offset[idx]    = off;
+    phase[idx]     = pha;
+
+    execute(1, period, amplitude, offset, phase);
+}
+
+
 void MiniKame::turnR(float steps, float T=600)
 {
     int x_amp = 15;
@@ -364,7 +379,8 @@ void MiniKame::home()
     int ap = 20;
     int hi = 35;
     int position[] = {90+ap,90-ap,90-hi,90+hi,90-ap,90+ap,90+hi,90-hi};
-    for (u8 i=0; i<8; i++) setServo(i, position[i]);
+    for (u8 i = 0; i < SERVO_CNT; i++)
+        setServo(i, position[i]);
 }
 
 void MiniKame::zero()
@@ -436,8 +452,6 @@ void MiniKame::execute(float steps, float period[8], int amplitude[8], int offse
     while (millis() < _final_time){
         for (u8 i = 0; i < SERVO_CNT; i++) {
             float angle = oscillator[i].refresh();
-            if (i == 0)
-                LOG(F("angle : %d\n"), (int)angle);
             setServo(i, angle);
         }
     }

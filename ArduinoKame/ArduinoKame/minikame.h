@@ -32,6 +32,7 @@ class MiniKame{
 
         void trimming(void);
         void wiggle(u8 id);
+        void test(int idx, int amp, int off, int pha, float T);
 
 
     private:

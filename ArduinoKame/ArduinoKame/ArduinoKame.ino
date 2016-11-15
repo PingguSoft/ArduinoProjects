@@ -18,10 +18,14 @@ static u16              mErrCtr = 0;
 static u8               mLastBatt;
 static bool             mIsShutdown = false;
 static u8               mLastAuxBtn = 0;
-
+static u8               mDir = 0;
 
 #define BIT_LASER       0
 
+#define BIT_DIR_UP      0
+#define BIT_DIR_DOWN    1
+#define BIT_DIR_LEFT    2
+#define BIT_DIR_RIGHT   3
 
 /*
 *****************************************************************************************
@@ -68,11 +72,22 @@ s8 mspCallback(u8 cmd, u8 *data, u8 size, u8 *res)
         case SerialProtocol::MSP_SET_RAW_RC:
             rc = (u16*)data;
 
+            mDir = 0;
             // roll
             val = (*rc++ - 1000);
+            if (val < 300) {
+                mDir |= BV(BIT_DIR_LEFT);
+            } else if (val > 800) {
+                mDir |= BV(BIT_DIR_RIGHT);
+            }
 
             // pitch
             val = (*rc++ - 1000);
+            if (val < 300) {
+                mDir |= BV(BIT_DIR_DOWN);
+            } else if (val > 800) {
+                mDir |= BV(BIT_DIR_UP);
+            }
 
             // yaw
             val = (*rc++ - 1000);
@@ -88,9 +103,9 @@ s8 mspCallback(u8 cmd, u8 *data, u8 size, u8 *res)
             }
             if (val != mLastAuxBtn) {
                 if (val & BV(0)) {
-
+                    analogWrite(PIN_LASER, 255);
                 } else {
-
+                    analogWrite(PIN_LASER, 0);
                 }
 
                 mIsShutdown = val & BV(3);
@@ -125,7 +140,7 @@ u8 getBattVolt(void)
 
     // max volt = ((r1 + r2) / r2) * 5V
     maxVolt = (BATT_DIVIDER_R1 / BATT_DIVIDER_R2) * 50 + 50;
-    return map(mVoltSum / VBAT_SMOOTH_LEVEL, 0, 1023, 0, maxVolt - 6);
+    return map(mVoltSum / VBAT_SMOOTH_LEVEL, 0, 1023, 0, maxVolt - 1);
 }
 
 void setup()
@@ -150,6 +165,12 @@ void setup()
 }
 
 
+
+int amp   = 0;
+int off   = 90;
+int phase = 0;
+int idx   = 0;
+
 void loop()
 {
     u8  ch;
@@ -160,10 +181,12 @@ void loop()
     mCurTS = millis();
 
     // every 5sec
-    if (mCurTS - mLastBattTS > 300) {
-        mLastBatt = getBattVolt();
-        LOG(F("VOLT:%4d\n"), mLastBatt);
-
+    if (mCurTS - mLastBattTS > 1000) {
+        u8 batt = getBattVolt();
+        if (batt != mLastBatt) {
+            mLastBatt = batt;
+            LOG(F("VOLT:%4d\n"), mLastBatt);
+        }
         mLastBattTS = mCurTS;
     }
 
@@ -174,43 +197,65 @@ void loop()
         tmp = mLastAuxBtn;
 
         switch(ch) {
-            case 'w':
+#ifndef __TEST__
+            case '8':
                 mRobot.walk(1,550);
                 break;
 
-            case 'a':
+            case '4':
                 mRobot.turnL(1,550);
                 break;
 
-            case 'd':
+            case '6':
                 mRobot.turnR(1,550);
                 break;
 
-            case '1':
-                mRobot.pushUp(2,5000);
+            case '5':
+                mRobot.home();
                 break;
 
-            case '2':
+            case 'p':
+                mRobot.pushUp(2, 2000);
+                break;
+
+            case 'u':
                 mRobot.upDown(4,250);
                 break;
 
-            case '3':
+            case 'j':
                 mRobot.jump();
                 break;
 
-            case '4':
+            case 'e':
                 mRobot.hello();
                 break;
 
-            case '5':
+            case 'f':
                 mRobot.frontBack(4,200);
                 break;
 
-            case '6':
+            case 'd':
                 mRobot.dance(2,1000);
                 break;
 
-            case '7':
+            case 'r':
+                mRobot.run(1,1000);
+                break;
+
+            case 'o':
+                mRobot.omniWalk(1, 1000, FALSE, 1);
+                break;
+
+            case 'm':
+                mRobot.moonwalkL(1, 1000);
+                break;
+
+            case 't':
+                mRobot.trimming();
+                break;
+#endif
+
+            case 'h':
                 mRobot.home();
                 break;
 
@@ -227,9 +272,70 @@ void loop()
                 }
                 break;
 
-            case 't':
-                mRobot.trimming();
+#ifdef __TEST__
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+                idx = ch - '1';
+                LOG(F("LEG:%d\n"), idx + 1);
                 break;
+
+            case 'O':
+                if (off < 190)
+                    off += 5;
+                LOG(F("Off:%3d, Amp:%3d, Pha:%3d\n"), off, amp, phase);
+                break;
+
+            case 'o':
+                if (off > 0)
+                    off -= 5;
+                LOG(F("Off:%3d, Amp:%3d, Pha:%3d\n"), off, amp, phase);
+                break;
+
+            case 'A':
+                if (amp < 90)
+                    amp += 5;
+                LOG(F("Off:%3d, Amp:%3d, Pha:%3d\n"), off, amp, phase);
+                break;
+
+            case 'a':
+                if (amp > 0)
+                    amp -= 5;
+                LOG(F("Off:%3d, Amp:%3d, Pha:%3d\n"), off, amp, phase);
+                break;
+
+            case 'P':
+                if (phase < 360)
+                    phase += 5;
+                LOG(F("Off:%3d, Amp:%3d, Pha:%3d\n"), off, amp, phase);
+                break;
+
+            case 'p':
+                if (phase > 0)
+                    phase -= 5;
+                LOG(F("Off:%3d, Amp:%3d, Pha:%3d\n"), off, amp, phase);
+                break;
+
+            case 't':
+                LOG(F("Off:%3d, Amp:%3d, Pha:%3d\n"), off, amp, phase);
+                mRobot.test(idx, amp, off, phase, 1000);
+                break;
+#endif
+        }
+    } else {
+        if (mDir & BV(BIT_DIR_UP)) {
+            mRobot.walk(1, 550);
+        } else if (mDir & BV(BIT_DIR_LEFT)) {
+            mRobot.turnL(1, 550);
+        }  else if (mDir & BV(BIT_DIR_RIGHT)) {
+            mRobot.turnR(1, 550);
+        } else {
+            mRobot.home();
         }
     }
 }
